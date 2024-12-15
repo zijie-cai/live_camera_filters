@@ -43,7 +43,7 @@
         padding: 10px 20px;
         box-sizing: border-box;
         z-index: 5;
-        background: rgba(0,0,0,0.5); /* Added background for better visibility */
+        background: rgba(0,0,0,0.5);
     }
 
     .icon-btn {
@@ -59,14 +59,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        /* Removed opacity so they stay fully visible */
     }
 
     .icon-btn:hover {
         transform: scale(1.1);
     }
 
-    /* Filter Label (up) */
+    /* Filter Label */
     #filter-label {
         position: absolute;
         top: 10%;
@@ -77,23 +76,24 @@
         text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
         z-index: 5;
         pointer-events: none;
-        background: rgba(0,0,0,0.5); /* Background to ensure visibility */
+        background: rgba(0,0,0,0.5);
         padding: 5px 10px;
         border-radius: 5px;
     }
 
-    /* Bottom Controls (Centered) */
+    /* Bottom Controls (Flush to bottom) */
     .controls {
         position: absolute;
-        bottom: 20px;
+        bottom: 0;
         width: 100%;
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 40px;
+        gap: 40px; 
         box-sizing: border-box;
         z-index: 5;
-        background: rgba(0,0,0,0.5); /* Background for better visibility */
+        background: rgba(0,0,0,0.5);
+        /* Remove or adjust padding as desired */
         padding: 10px 0;
     }
 
@@ -237,13 +237,13 @@
 <div id="filter-label">Filter: Normal</div>
 
 <div class="controls">
-    <!-- Initially filter is off, so show the 'off' icon -->
+    <!-- Initially filter is off -->
     <button id="toggle-current-filter" class="button" aria-label="Toggle Filter On/Off">
-    <img src="icons/vis_on_1.png" alt="Filter Off"/>
+        <img src="icons/vis_on_1.png" alt="Filter Off"/>
     </button>
 
     <button id="switch-camera" class="button" aria-label="Switch Camera">
-    <img src="icons/switch.png" alt="Switch Camera"/>
+        <img src="icons/switch.png" alt="Switch Camera"/>
     </button>
 </div>
 
