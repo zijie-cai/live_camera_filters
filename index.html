@@ -2,7 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<!-- Optimize viewport for mobile -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+
+<!-- Enable standalone mode on Android -->
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- Enable standalone mode on iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<!-- Set status bar style for iOS -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- Set theme color for Chrome on Android -->
+<meta name="theme-color" content="#000000">
+
 <title>Camera Filter App</title>
 <style>
     body, html {
@@ -14,7 +28,13 @@
         font-family: sans-serif;
         background: #000;
         position: relative;
+        -webkit-user-select: none; /* Disable text selection on iOS */
+        -webkit-touch-callout: none; /* Disable callouts on iOS */
+        user-select: none; /* Disable text selection */
+        touch-action: manipulation; /* Improve responsiveness on touch screens */
+        -webkit-tap-highlight-color: transparent; /* Remove tap highlight on iOS */
     }
+
     #camera {
         position: absolute;
         width: 100%;
@@ -53,16 +73,15 @@
         transition: transform 0.3s;
         font-size: 30px; 
         color: white;
-        padding: 0;
-        width: 30px;
-        height: 30px;
+        width: 40px; /* Slightly bigger tap area */
+        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
     }
 
-    .icon-btn:hover {
-        transform: scale(1.1);
+    .icon-btn:active {
+        transform: scale(0.95);
     }
 
     /* Filter Label */
@@ -72,13 +91,14 @@
         left: 50%;
         transform: translateX(-50%);
         color: white;
-        font-size: 20px;
+        font-size: 18px;
         text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
         z-index: 5;
         pointer-events: none;
         background: rgba(0,0,0,0.5);
         padding: 5px 10px;
         border-radius: 5px;
+        white-space: nowrap;
     }
 
     /* Bottom Controls (Flush to bottom) */
@@ -93,32 +113,25 @@
         box-sizing: border-box;
         z-index: 5;
         background: rgba(0,0,0,0.5);
-        /* Remove or adjust padding as desired */
         padding: 10px 0;
-    }
-
-    #switch-camera {
-        position: relative;
-        top: -2px;
     }
 
     .button {
         font-size: 24px;
-        padding: 0;
         background: none;
         border: none;
         color: white;
         cursor: pointer;
         transition: transform 0.3s;
-        width: 30px;
-        height: 30px;
+        width: 40px; /* Increased size for tap area */
+        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
     }
 
-    .button:hover {
-        transform: scale(1.1);
+    .button:active {
+        transform: scale(0.95);
     }
 
     .button img {
@@ -144,6 +157,7 @@
         padding: 20px;
         box-sizing: border-box;
         z-index: 10;
+        overflow-y: auto; /* scroll on small screens */
     }
 
     #side-menu.open {
@@ -172,8 +186,8 @@
         transition: background 0.3s;
     }
 
-    .filter-option:hover {
-        background: rgba(255,255,255,0.2);
+    .filter-option:active {
+        background: rgba(255,255,255,0.3);
     }
 
     .filter-option.active {
@@ -197,6 +211,7 @@
         padding: 20px;
         box-sizing: border-box;
         z-index: 10;
+        overflow-y: auto; /* scroll on small screens */
     }
 
     #info-menu.open {
@@ -366,7 +381,7 @@
       applyFilterState();
     });
 
-    // Clicking anywhere closes open menus if click is outside them
+    // Close menus if clicking outside
     document.addEventListener('click', (e) => {
       const target = e.target;
       const clickingInsideSideMenu = sideMenu.contains(target) || menuIcon.contains(target);
