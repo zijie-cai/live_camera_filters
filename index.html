@@ -2,21 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<!-- Optimize viewport for mobile -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-
-<!-- Enable standalone mode on Android -->
-<meta name="mobile-web-app-capable" content="yes">
-
-<!-- Enable standalone mode on iOS -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-
-<!-- Set status bar style for iOS -->
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<!-- Set theme color for Chrome on Android -->
-<meta name="theme-color" content="#000000">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Camera Filter App</title>
 <style>
     body, html {
@@ -28,13 +14,7 @@
         font-family: sans-serif;
         background: #000;
         position: relative;
-        -webkit-user-select: none; /* Disable text selection on iOS */
-        -webkit-touch-callout: none; /* Disable callouts on iOS */
-        user-select: none; /* Disable text selection */
-        touch-action: manipulation; /* Improve responsiveness on touch screens */
-        -webkit-tap-highlight-color: transparent; /* Remove tap highlight on iOS */
     }
-
     #camera {
         position: absolute;
         width: 100%;
@@ -73,15 +53,16 @@
         transition: transform 0.3s;
         font-size: 30px; 
         color: white;
-        width: 40px; /* Slightly bigger tap area */
-        height: 40px;
+        padding: 0;
+        width: 30px;
+        height: 30px;
         display: flex;
         align-items: center;
         justify-content: center;
     }
 
-    .icon-btn:active {
-        transform: scale(0.95);
+    .icon-btn:hover {
+        transform: scale(1.1);
     }
 
     /* Filter Label */
@@ -91,14 +72,13 @@
         left: 50%;
         transform: translateX(-50%);
         color: white;
-        font-size: 18px;
+        font-size: 20px;
         text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
         z-index: 5;
         pointer-events: none;
         background: rgba(0,0,0,0.5);
         padding: 5px 10px;
         border-radius: 5px;
-        white-space: nowrap;
     }
 
     /* Bottom Controls (Flush to bottom) */
@@ -116,28 +96,44 @@
         padding: 10px 0;
     }
 
+    #switch-camera {
+        position: relative;
+        top: -2px;
+        transition: transform 0.3s ease;
+    }
+
+    #switch-camera.rotate {
+        transform: rotate(180deg);
+    }
+
     .button {
         font-size: 24px;
+        padding: 0;
         background: none;
         border: none;
         color: white;
         cursor: pointer;
         transition: transform 0.3s;
-        width: 40px; /* Increased size for tap area */
-        height: 40px;
+        width: 30px;
+        height: 30px;
         display: flex;
         align-items: center;
         justify-content: center;
     }
 
-    .button:active {
-        transform: scale(0.95);
+    .button:hover {
+        transform: scale(1.1);
     }
 
     .button img {
         width: 150%;
         height: 150%;
         object-fit: contain;
+        transition: transform 0.3s ease;
+    }
+
+    .button.filter-on img {
+        transform: rotate(180deg);
     }
 
     /* Side Menu (Filters) */
@@ -157,7 +153,6 @@
         padding: 20px;
         box-sizing: border-box;
         z-index: 10;
-        overflow-y: auto; /* scroll on small screens */
     }
 
     #side-menu.open {
@@ -186,8 +181,8 @@
         transition: background 0.3s;
     }
 
-    .filter-option:active {
-        background: rgba(255,255,255,0.3);
+    .filter-option:hover {
+        background: rgba(255,255,255,0.2);
     }
 
     .filter-option.active {
@@ -211,7 +206,6 @@
         padding: 20px;
         box-sizing: border-box;
         z-index: 10;
-        overflow-y: auto; /* scroll on small screens */
     }
 
     #info-menu.open {
@@ -235,12 +229,6 @@
 </style>
 </head>
 <body>
-<!-- 
-    Icons attribution:
-    Switch camera icons: https://www.flaticon.com/free-icons/switch-camera by Royyan Wijaya
-    Visibility icons: https://www.flaticon.com/free-icons/visibility by uicon 
--->
-
 <video id="camera" autoplay playsinline></video>
 <div id="overlay"></div>
 
@@ -252,7 +240,7 @@
 <div id="filter-label">Filter: Normal</div>
 
 <div class="controls">
-    <!-- Initially filter is off -->
+    <!-- Initially filter is not displayed -->
     <button id="toggle-current-filter" class="button" aria-label="Toggle Filter On/Off">
         <img src="icons/vis_on_1.png" alt="Filter Off"/>
     </button>
@@ -265,7 +253,8 @@
 <!-- Filter Menu -->
 <div id="side-menu">
     <h2>Select a Filter</h2>
-    <button class="filter-option" data-filter="grayscale(100%)">Grayscale</button>
+    <!-- Grayscale highlighted by default but filter not applied -->
+    <button class="filter-option active" data-filter="grayscale(100%)">Grayscale</button>
     <button class="filter-option" data-filter="sepia(100%)">Sepia</button>
     <button class="filter-option" data-filter="invert(100%)">Invert</button>
     <button class="filter-option" data-filter="contrast(200%)">High Contrast</button>
@@ -274,8 +263,20 @@
 
 <!-- Info Menu -->
 <div id="info-menu">
-    <h2>Information</h2>
-    <p>This project demonstrates real-time camera filters using HTML, CSS, and JavaScript. Use the menu (☰) to select a filter, switch cameras with the camera icon, and toggle filters on/off with the eye icon.</p>
+  <h2>Information</h2>
+  <p style="color: white;">This project includes a collection of filters to experience in real time with your camera feed.</p>
+  <p style="color: white;">Features:</p>
+  <ul>
+      <li style="color: white; margin-bottom: 10px;">
+          <strong>Select filters:</strong> Use the menu (<strong>☰</strong>) to choose desired camera filters.
+      </li>
+      <li style="color: white; margin-bottom: 10px;">
+          <strong>Toggle filters:</strong> Turn filters on/off with the visibility button (<img src="icons/vis_on_1.png" alt="Filter Icon" style="height: 16px;"/>).
+      </li>
+      <li style="color: white; margin-bottom: 10px;">
+          <strong>Switch cameras:</strong> Swap between front and back cameras on mobile devices with the switch view button (<img src="icons/switch.png" alt="Switch Camera Icon" style="height: 16px;"/>).
+      </li>
+  </ul>
 </div>
 
 <script>
@@ -290,7 +291,7 @@
     const toggleFilterButton = document.getElementById('toggle-current-filter');
     const toggleFilterImg = toggleFilterButton.querySelector('img');
 
-    // Initialize filter settings
+    // Initialize filter settings (filter highlighted but off by default)
     let currentFilter = 'grayscale(100%)';
     let currentFilterName = 'Grayscale';
     let filterEnabled = false;
@@ -303,11 +304,13 @@
         filterLabel.textContent = `Filter: ${currentFilterName}`;
         toggleFilterImg.src = 'icons/vis_off_1.png';
         toggleFilterImg.alt = 'Filter On';
+        toggleFilterButton.classList.add('filter-on');
       } else {
         video.style.filter = 'none';
         filterLabel.textContent = 'Filter: Normal';
         toggleFilterImg.src = 'icons/vis_on_1.png';
         toggleFilterImg.alt = 'Filter Off';
+        toggleFilterButton.classList.remove('filter-on');
       }
     }
 
@@ -322,8 +325,6 @@
         .then((mediaStream) => {
           stream = mediaStream;
           video.srcObject = stream;
-
-          // Re-apply current filter state after restarting camera
           applyFilterState();
         })
         .catch((error) => {
@@ -341,6 +342,10 @@
         stream.getTracks().forEach(track => track.stop());
       }
       isFrontCamera = !isFrontCamera;
+      switchCameraButton.classList.add('rotate');
+      setTimeout(() => {
+          switchCameraButton.classList.remove('rotate');
+      }, 300);
       startCamera(isFrontCamera);
     });
 
@@ -358,7 +363,7 @@
       sideMenu.classList.remove('open');
     });
 
-    // Select a filter and automatically turn it on
+    // Select a filter and automatically turn it on if it was on before
     filterOptions.forEach(option => {
       option.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -367,8 +372,9 @@
         currentFilter = option.getAttribute('data-filter');
         currentFilterName = option.textContent;
 
-        filterEnabled = true;
-        applyFilterState();
+        if (filterEnabled) {
+          applyFilterState();
+        }
 
         sideMenu.classList.remove('open');
       });
@@ -381,7 +387,7 @@
       applyFilterState();
     });
 
-    // Close menus if clicking outside
+    // Clicking anywhere closes open menus if click is outside them
     document.addEventListener('click', (e) => {
       const target = e.target;
       const clickingInsideSideMenu = sideMenu.contains(target) || menuIcon.contains(target);
