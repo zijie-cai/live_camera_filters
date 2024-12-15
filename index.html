@@ -253,12 +253,12 @@
 <!-- Filter Menu -->
 <div id="side-menu">
     <h2>Select a Filter</h2>
-    <!-- Grayscale highlighted by default but filter not applied -->
     <button class="filter-option active" data-filter="grayscale(100%)">Grayscale</button>
     <button class="filter-option" data-filter="sepia(100%)">Sepia</button>
     <button class="filter-option" data-filter="invert(100%)">Invert</button>
     <button class="filter-option" data-filter="contrast(200%)">High Contrast</button>
     <button class="filter-option" data-filter="saturate(200%)">Saturated</button>
+    <button class="filter-option" data-filter="brightness(70%) contrast(110%) hue-rotate(190deg) saturate(120%)">Underwater (Beta)</button>
 </div>
 
 <!-- Info Menu -->
@@ -274,7 +274,7 @@
           <strong>Toggle filters:</strong> Turn filters on/off with the visibility button (<img src="icons/vis_on_1.png" alt="Filter Icon" style="height: 16px;"/>).
       </li>
       <li style="color: white; margin-bottom: 10px;">
-          <strong>Switch cameras:</strong> Swap between front and back cameras on mobile devices with the switch view button (<img src="icons/switch.png" alt="Switch Camera Icon" style="height: 16px;"/>).
+          <strong>Switch cameras:</strong> Swap between front and back cameras (if applicable) with the switch view button (<img src="icons/switch.png" alt="Switch Camera Icon" style="height: 16px;"/>).
       </li>
   </ul>
 </div>
@@ -363,7 +363,7 @@
       sideMenu.classList.remove('open');
     });
 
-    // Select a filter and automatically turn it on if it was on before
+    // Select a filter and turn it on automatically
     filterOptions.forEach(option => {
       option.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -372,9 +372,9 @@
         currentFilter = option.getAttribute('data-filter');
         currentFilterName = option.textContent;
 
-        if (filterEnabled) {
-          applyFilterState();
-        }
+        // Enable filter automatically
+        filterEnabled = true;
+        applyFilterState();
 
         sideMenu.classList.remove('open');
       });
