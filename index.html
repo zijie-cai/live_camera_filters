@@ -262,14 +262,21 @@
     <button class="filter-option" data-filter="brightness(70%) contrast(110%) hue-rotate(190deg) saturate(120%)">Underwater (Beta)</button>
 </div>
 
+<!-- Info Menu -->
 <div id="info-menu">
   <h2>Information</h2>
-  <p>This project includes a collection of filters to experience in real time with your camera feed.</p>
-  <p>Features:</p>
+  <p style="color: white;">This project includes a collection of filters to experience in real time with your camera feed.</p>
+  <p style="color: white;">Features:</p>
   <ul>
-      <li><strong>Select filters:</strong> Use the menu (<strong>☰</strong>) to choose desired camera filters.</li>
-      <li><strong>Toggle filters:</strong> Turn filters on/off with the visibility button (<img src="icons/vis_on_1.png" alt="Filter Icon" style="height: 16px;"/>).</li>
-      <li><strong>Switch cameras:</strong> After the first successful switch, attempts <code>applyConstraints()</code> to reduce permission prompts.</li>
+      <li style="color: white; margin-bottom: 10px;">
+          <strong>Select filters:</strong> Use the menu (<strong>☰</strong>) to choose desired camera filters.
+      </li>
+      <li style="color: white; margin-bottom: 10px;">
+          <strong>Toggle filters:</strong> Turn filters on/off with the visibility button (<img src="icons/vis_on_1.png" alt="Filter Icon" style="height: 16px;"/>).
+      </li>
+      <li style="color: white; margin-bottom: 10px;">
+          <strong>Switch cameras:</strong> Swap between front and back cameras (if applicable) with the switch view button (<img src="icons/switch.png" alt="Switch Camera Icon" style="height: 16px;"/>).
+      </li>
   </ul>
 </div>
 
@@ -290,7 +297,6 @@
     let filterEnabled = false;
     let isFrontCamera = false; // Start with back camera
     let stream;
-    let hasSwitchedCameraOnce = false;
 
     function applyFilterState() {
       if (filterEnabled && currentFilter !== 'none') {
@@ -326,37 +332,18 @@
     // Initialize with back camera
     startCamera(false);
 
-    async function switchCameraView() {
-      isFrontCamera = !isFrontCamera;
-      switchCameraButton.classList.add('rotate');
-
-      // If we've already switched once, try applyConstraints to avoid prompting again
-      if (hasSwitchedCameraOnce && stream) {
-        const [track] = stream.getVideoTracks();
-        try {
-          await track.applyConstraints({ facingMode: isFrontCamera ? 'user' : 'environment' });
-        } catch (error) {
-          // If applyConstraints fails, fallback to reinit stream
-          track.stop();
-          await startCamera(isFrontCamera);
-        }
-      } else {
-        // First switch: just reinit stream (may prompt again)
-        if (stream) {
-          stream.getTracks().forEach(track => track.stop());
-        }
-        await startCamera(isFrontCamera);
-        hasSwitchedCameraOnce = true;
-      }
-
-      setTimeout(() => {
-        switchCameraButton.classList.remove('rotate');
-      }, 300);
-    }
-
+    // Switch camera by stopping existing tracks and restarting getUserMedia
     switchCameraButton.addEventListener('click', (e) => {
       e.stopPropagation();
-      switchCameraView();
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      isFrontCamera = !isFrontCamera;
+      switchCameraButton.classList.add('rotate');
+      setTimeout(() => {
+          switchCameraButton.classList.remove('rotate');
+      }, 300);
+      startCamera(isFrontCamera);
     });
 
     menuIcon.addEventListener('click', (e) => {
