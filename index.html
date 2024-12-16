@@ -12,7 +12,7 @@
         height: 100%;
         overflow: hidden;
         font-family: sans-serif;
-        background: #111; /* Slightly lighter than pure black for the base background */
+        background: #111; 
         position: relative;
     }
     #camera {
@@ -22,17 +22,15 @@
         object-fit: cover;
     }
 
-    /* Overlay gradient for readability (lowering darkness from 0.7 to 0.3) */
     #overlay {
         position: absolute;
         bottom: 0;
         width: 100%;
         height: 40%;
-        background: linear-gradient(to top, rgba(0,0,0,0.3), transparent);
+        background: linear-gradient(to top, rgba(0,0,0,0.3), transparent); /* Slightly less transparent */
         pointer-events: none;
     }
 
-    /* Top Bar with Icons - reduce background darkness from 0.5 to 0.3 */
     .top-bar {
         position: absolute;
         top: 0;
@@ -43,7 +41,7 @@
         padding: 10px 20px;
         box-sizing: border-box;
         z-index: 5;
-        background: rgba(0,0,0,0.3);
+        background: rgba(0,0,0,0.25); /* Less see-through than 0.15 */
     }
 
     .icon-btn {
@@ -51,7 +49,7 @@
         border: none;
         cursor: pointer;
         transition: transform 0.3s;
-        font-size: 30px; 
+        font-size: 30px;
         color: white;
         padding: 0;
         width: 30px;
@@ -65,7 +63,6 @@
         transform: scale(1);
     }
 
-    /* Filter Label - also reduce background shading */
     #filter-label {
         position: absolute;
         top: 10%;
@@ -76,12 +73,16 @@
         text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
         z-index: 5;
         pointer-events: none;
-       
         padding: 5px 10px;
-       
     }
 
-    /* Bottom Controls (Flush to bottom) - lower opacity */
+    /* Smaller filter label on mobile devices */
+    @media (max-width: 480px) {
+      #filter-label {
+          font-size: 16px;
+      }
+    }
+
     .controls {
         position: absolute;
         bottom: 0;
@@ -92,7 +93,7 @@
         gap: 40px; 
         box-sizing: border-box;
         z-index: 5;
-        background: rgba(0,0,0,0.3);
+        background: rgba(0,0,0,0.25); /* Less transparent but still see-through */
         padding: 10px 0;
     }
 
@@ -136,14 +137,13 @@
         transform: rotate(180deg);
     }
 
-    /* Side Menu (Filters) - lighter background from rgba(0,0,0,0.8) to rgba(0,0,0,0.4) */
     #side-menu {
         position: absolute;
         top: 0;
         left: 0;
         width: 250px;
         height: 100%;
-        background: rgba(0,0,0,0.4);
+        background: rgba(0,0,0,0.3); /* Slightly more opaque */
         backdrop-filter: blur(5px);
         box-shadow: 2px 0 10px rgba(0,0,0,0.5);
         transform: translateX(-100%);
@@ -189,14 +189,13 @@
         background: rgba(255,255,255,0.3);
     }
 
-    /* Info Menu - similarly lighten from rgba(0,0,0,0.8) to rgba(0,0,0,0.4) */
     #info-menu {
         position: absolute;
         top: 0;
         right: 0;
         width: 250px;
         height: 100%;
-        background: rgba(0,0,0,0.4);
+        background: rgba(0,0,0,0.3); /* Slightly more opaque */
         backdrop-filter: blur(5px);
         box-shadow: -2px 0 10px rgba(0,0,0,0.5);
         transform: translateX(100%);
@@ -240,17 +239,14 @@
 <div id="filter-label">Filter: Normal</div>
 
 <div class="controls">
-    <!-- Initially filter is not displayed -->
     <button id="toggle-current-filter" class="button" aria-label="Toggle Filter On/Off">
         <img src="icons/vis_on_1.png" alt="Filter Off"/>
     </button>
-
     <button id="switch-camera" class="button" aria-label="Switch Camera">
         <img src="icons/switch.png" alt="Switch Camera"/>
     </button>
 </div>
 
-<!-- Filter Menu -->
 <div id="side-menu">
     <h2>Select a Filter</h2>
     <button class="filter-option active" data-filter="grayscale(100%)">Grayscale</button>
@@ -261,7 +257,6 @@
     <button class="filter-option" data-filter="brightness(70%) contrast(110%) hue-rotate(190deg) saturate(120%)">Underwater (Beta)</button>
 </div>
 
-<!-- Info Menu -->
 <div id="info-menu">
   <h2>Information</h2>
   <p>This project includes a collection of filters to experience in real time with your camera feed.</p>
@@ -269,7 +264,7 @@
   <ul>
       <li><strong>Select filters:</strong> Use the menu (<strong>☰</strong>) to choose desired camera filters.</li>
       <li><strong>Toggle filters:</strong> Turn filters on/off with the visibility button (<img src="icons/vis_on_1.png" alt="Filter Icon" style="height: 16px;"/>).</li>
-      <li><strong>Switch cameras:</strong> Swap between front and back cameras (if applicable) with the switch view button (<img src="icons/switch.png" alt="Switch Camera Icon" style="height: 16px;"/>).</li>
+      <li><strong>Switch cameras:</strong> Attempting to switch without prompting again using <code>applyConstraints()</code>.</li>
   </ul>
 </div>
 
@@ -285,11 +280,10 @@
     const toggleFilterButton = document.getElementById('toggle-current-filter');
     const toggleFilterImg = toggleFilterButton.querySelector('img');
 
-    // Initialize filter settings (filter highlighted but off by default)
     let currentFilter = 'grayscale(100%)';
     let currentFilterName = 'Grayscale';
     let filterEnabled = false;
-    let isFrontCamera = true;
+    let isFrontCamera = false; // default to back camera
     let stream;
 
     function applyFilterState() {
@@ -308,56 +302,64 @@
       }
     }
 
-    // Function to start the camera
-    function startCamera(front = true) {
+    async function startCamera(front = false) {
       const constraints = {
         video: {
           facingMode: front ? 'user' : 'environment'
         }
-      };    
-      navigator.mediaDevices.getUserMedia(constraints)
-        .then((mediaStream) => {
-          stream = mediaStream;
-          video.srcObject = stream;
-          applyFilterState();
-        })
-        .catch((error) => {
-          console.error('Error accessing the camera:', error);
-        });
+      };
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+        applyFilterState();
+      } catch (error) {
+        console.error('Error accessing the camera:', error);
+      }
     }
 
-    // Initialize the camera
-    startCamera();
+    // Attempt to switch camera without re-prompting by using applyConstraints
+    async function switchCamera() {
+      if (!stream) return;
 
-    // Switch camera view without resetting the filter
-    switchCameraButton.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
       isFrontCamera = !isFrontCamera;
       switchCameraButton.classList.add('rotate');
+
+      const [track] = stream.getVideoTracks();
+      try {
+        await track.applyConstraints({ facingMode: isFrontCamera ? 'user' : 'environment' });
+        // If successful, no need to re-request permissions
+      } catch (error) {
+        console.warn('applyConstraints failed, re-requesting getUserMedia:', error);
+        // Fallback: stop current stream and re-initiate getUserMedia()
+        track.stop();
+        await startCamera(isFrontCamera);
+      }
+
       setTimeout(() => {
-          switchCameraButton.classList.remove('rotate');
+        switchCameraButton.classList.remove('rotate');
       }, 300);
-      startCamera(isFrontCamera);
+    }
+
+    // Initialize with back camera
+    startCamera(false);
+
+    switchCameraButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      switchCamera();
     });
 
-    // Toggle side menu (filters)
     menuIcon.addEventListener('click', (e) => {
       e.stopPropagation();
       sideMenu.classList.toggle('open');
       infoMenu.classList.remove('open');
     });
 
-    // Toggle info menu
     infoIcon.addEventListener('click', (e) => {
       e.stopPropagation();
       infoMenu.classList.toggle('open');
       sideMenu.classList.remove('open');
     });
 
-    // Select a filter and turn it on automatically
     filterOptions.forEach(option => {
       option.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -365,23 +367,18 @@
         option.classList.add('active');
         currentFilter = option.getAttribute('data-filter');
         currentFilterName = option.textContent;
-
-        // Enable filter automatically
         filterEnabled = true;
         applyFilterState();
-
         sideMenu.classList.remove('open');
       });
     });
 
-    // Toggle between normal view and current selected filter
     toggleFilterButton.addEventListener('click', (e) => {
       e.stopPropagation();
       filterEnabled = !filterEnabled;
       applyFilterState();
     });
 
-    // Clicking anywhere closes open menus if click is outside them
     document.addEventListener('click', (e) => {
       const target = e.target;
       const clickingInsideSideMenu = sideMenu.contains(target) || menuIcon.contains(target);
