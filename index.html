@@ -12,7 +12,7 @@
         height: 100%;
         overflow: hidden;
         font-family: sans-serif;
-        background: #111; 
+        background: #000; /* Dark background for contrast */
         position: relative;
     }
     #camera {
@@ -22,15 +22,17 @@
         object-fit: cover;
     }
 
+    /* Very minimal gradient overlay */
     #overlay {
         position: absolute;
         bottom: 0;
         width: 100%;
         height: 40%;
-        background: linear-gradient(to top, rgba(0,0,0,0.3), transparent); /* Slightly less transparent */
+        background: linear-gradient(to top, rgba(0,0,0,0.1), transparent);
         pointer-events: none;
     }
 
+    /* Top bar very transparent */
     .top-bar {
         position: absolute;
         top: 0;
@@ -41,7 +43,7 @@
         padding: 10px 20px;
         box-sizing: border-box;
         z-index: 5;
-        background: rgba(0,0,0,0.25); /* Less see-through than 0.15 */
+        background: rgba(0,0,0,0.1);
     }
 
     .icon-btn {
@@ -49,7 +51,7 @@
         border: none;
         cursor: pointer;
         transition: transform 0.3s;
-        font-size: 30px;
+        font-size: 30px; 
         color: white;
         padding: 0;
         width: 30px;
@@ -63,6 +65,7 @@
         transform: scale(1);
     }
 
+    /* Filter label with more see-through background */
     #filter-label {
         position: absolute;
         top: 10%;
@@ -70,10 +73,12 @@
         transform: translateX(-50%);
         color: white;
         font-size: 20px;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
         z-index: 5;
         pointer-events: none;
         padding: 5px 10px;
+        background: rgba(0,0,0,0.1); /* More see-through */
+        border-radius: 5px;
     }
 
     /* Smaller filter label on mobile devices */
@@ -93,7 +98,7 @@
         gap: 40px; 
         box-sizing: border-box;
         z-index: 5;
-        background: rgba(0,0,0,0.25); /* Less transparent but still see-through */
+        background: rgba(0,0,0,0.1);
         padding: 10px 0;
     }
 
@@ -143,9 +148,9 @@
         left: 0;
         width: 250px;
         height: 100%;
-        background: rgba(0,0,0,0.3); /* Slightly more opaque */
+        background: rgba(0,0,0,0.2);
         backdrop-filter: blur(5px);
-        box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+        box-shadow: 2px 0 10px rgba(0,0,0,0.3);
         transform: translateX(-100%);
         transition: transform 0.3s ease;
         display: flex;
@@ -182,11 +187,11 @@
     }
 
     .filter-option:hover {
-        background: rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.15);
     }
 
     .filter-option.active {
-        background: rgba(255,255,255,0.3);
+        background: rgba(255,255,255,0.2);
     }
 
     #info-menu {
@@ -195,9 +200,9 @@
         right: 0;
         width: 250px;
         height: 100%;
-        background: rgba(0,0,0,0.3); /* Slightly more opaque */
+        background: rgba(0,0,0,0.2);
         backdrop-filter: blur(5px);
-        box-shadow: -2px 0 10px rgba(0,0,0,0.5);
+        box-shadow: -2px 0 10px rgba(0,0,0,0.3);
         transform: translateX(100%);
         transition: transform 0.3s ease;
         display: flex;
@@ -264,7 +269,7 @@
   <ul>
       <li><strong>Select filters:</strong> Use the menu (<strong>☰</strong>) to choose desired camera filters.</li>
       <li><strong>Toggle filters:</strong> Turn filters on/off with the visibility button (<img src="icons/vis_on_1.png" alt="Filter Icon" style="height: 16px;"/>).</li>
-      <li><strong>Switch cameras:</strong> Attempting to switch without prompting again using <code>applyConstraints()</code>.</li>
+      <li><strong>Switch cameras:</strong> After the first successful switch, attempts <code>applyConstraints()</code> to reduce permission prompts.</li>
   </ul>
 </div>
 
@@ -283,8 +288,9 @@
     let currentFilter = 'grayscale(100%)';
     let currentFilterName = 'Grayscale';
     let filterEnabled = false;
-    let isFrontCamera = false; // default to back camera
+    let isFrontCamera = false; // Start with back camera
     let stream;
+    let hasSwitchedCameraOnce = false;
 
     function applyFilterState() {
       if (filterEnabled && currentFilter !== 'none') {
@@ -307,7 +313,7 @@
         video: {
           facingMode: front ? 'user' : 'environment'
         }
-      };
+      };    
       try {
         stream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = stream;
@@ -317,22 +323,30 @@
       }
     }
 
-    // Attempt to switch camera without re-prompting by using applyConstraints
-    async function switchCamera() {
-      if (!stream) return;
+    // Initialize with back camera
+    startCamera(false);
 
+    async function switchCameraView() {
       isFrontCamera = !isFrontCamera;
       switchCameraButton.classList.add('rotate');
 
-      const [track] = stream.getVideoTracks();
-      try {
-        await track.applyConstraints({ facingMode: isFrontCamera ? 'user' : 'environment' });
-        // If successful, no need to re-request permissions
-      } catch (error) {
-        console.warn('applyConstraints failed, re-requesting getUserMedia:', error);
-        // Fallback: stop current stream and re-initiate getUserMedia()
-        track.stop();
+      // If we've already switched once, try applyConstraints to avoid prompting again
+      if (hasSwitchedCameraOnce && stream) {
+        const [track] = stream.getVideoTracks();
+        try {
+          await track.applyConstraints({ facingMode: isFrontCamera ? 'user' : 'environment' });
+        } catch (error) {
+          // If applyConstraints fails, fallback to reinit stream
+          track.stop();
+          await startCamera(isFrontCamera);
+        }
+      } else {
+        // First switch: just reinit stream (may prompt again)
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+        }
         await startCamera(isFrontCamera);
+        hasSwitchedCameraOnce = true;
       }
 
       setTimeout(() => {
@@ -340,12 +354,9 @@
       }, 300);
     }
 
-    // Initialize with back camera
-    startCamera(false);
-
     switchCameraButton.addEventListener('click', (e) => {
       e.stopPropagation();
-      switchCamera();
+      switchCameraView();
     });
 
     menuIcon.addEventListener('click', (e) => {
